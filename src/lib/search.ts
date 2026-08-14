@@ -1,0 +1,3 @@
+export function normalizeSearchText(value:string){return value.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").toLowerCase().trim();}
+export function buildSearchRegex(query?:string){const safe=normalizeSearchText(query||"").slice(0,80);const terms=safe.split(/\s+/).filter(Boolean).slice(0,8).map(term=>term.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));return terms.length?new RegExp(terms.join("|"),"i"):null;}
+export function matchesSearch(regex:RegExp|null,...values:(string|string[]|null|undefined)[]){if(!regex)return true;return regex.test(normalizeSearchText(values.flatMap(v=>Array.isArray(v)?v:[v||""]).join(" ")));}

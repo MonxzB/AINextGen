@@ -1,0 +1,5 @@
+import { ImageResponse } from "next/og";
+export const alt="AINextGen — Kiến thức AI thế hệ mới";
+export const size={width:1200,height:630};
+export const contentType="image/png";
+export default function OpenGraphImage(){return new ImageResponse(<div style={{width:"100%",height:"100%",display:"flex",flexDirection:"column",justifyContent:"center",padding:"80px",color:"white",backgroundColor:"#070a12",backgroundImage:"radial-gradient(circle at 80% 20%,#185b63 0%,transparent 34%),radial-gradient(circle at 15% 15%,#39268d 0%,transparent 38%)"}}><div style={{display:"flex",alignItems:"center",fontSize:34,fontWeight:800,color:"#9a85ff"}}><div style={{display:"flex",alignItems:"center",justifyContent:"center",width:58,height:58,marginRight:18,borderRadius:16,color:"white",fontSize:20,background:"linear-gradient(135deg,#7c5cff,#22d3c5)"}}>NG</div>AINextGen · AI Knowledge Hub</div><div style={{display:"flex",maxWidth:980,marginTop:35,fontSize:76,fontWeight:900,lineHeight:1.08}}>Làm chủ AI trong thời đại mới.</div><div style={{display:"flex",marginTop:32,fontSize:30,color:"#cbd5e1"}}>Tutorial · Prompt · Workflow · Automation</div></div>,size);}

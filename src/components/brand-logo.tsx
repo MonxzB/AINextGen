@@ -1,0 +1,3 @@
+export function BrandLogo({compact=false}:{compact?:boolean}){
+  return <span className="inline-flex items-center gap-2.5" aria-label="AINextGen"><span className="grid size-10 shrink-0 place-items-center rounded-[13px] bg-gradient-to-br from-brand-500 via-violet-500 to-cyan-400 p-px shadow-lg shadow-brand-500/20"><span className="grid size-full place-items-center rounded-[12px] bg-[#0a0e1a]/90 text-[11px] font-black tracking-[-0.08em] text-white">NG</span></span>{!compact&&<span className="brand-wordmark whitespace-nowrap text-xl font-black tracking-[-0.035em]">AI<span className="bg-gradient-to-r from-brand-500 to-cyan-400 bg-clip-text text-transparent">NextGen</span></span>}</span>;
+}

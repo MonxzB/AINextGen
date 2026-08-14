@@ -1,0 +1,5 @@
+"use client";
+import Link from "next/link";
+import { useEffect } from "react";
+import { Home, RefreshCw, TriangleAlert } from "lucide-react";
+export default function ErrorPage({error,reset}:{error:Error&{digest?:string};reset:()=>void}){useEffect(()=>{console.error(error)},[error]);return <main className="container-page grid min-h-[75vh] place-items-center py-16 text-center"><div className="card max-w-xl p-8 sm:p-12"><TriangleAlert className="mx-auto text-amber-400" size={48}/><h1 className="mt-5 text-3xl font-black">Có lỗi khi tải nội dung</h1><p className="mt-3 leading-7 text-black/55">Dữ liệu của bạn không bị thay đổi. Hãy thử tải lại khu vực này hoặc quay về trang chủ.</p>{error.digest&&<p className="mt-3 font-mono text-xs text-black/35">Mã lỗi: {error.digest}</p>}<div className="mt-7 flex flex-wrap justify-center gap-3"><button type="button" onClick={reset} className="btn-primary gap-2"><RefreshCw size={18}/> Thử lại</button><Link href="/" className="btn-secondary gap-2"><Home size={18}/> Trang chủ</Link></div></div></main>}

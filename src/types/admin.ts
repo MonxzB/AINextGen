@@ -1,0 +1,6 @@
+export type ContentBlockType="heading"|"paragraph"|"image"|"code"|"prompt"|"checklist"|"warning"|"quote";
+export type ContentBlock={id:string;type:ContentBlockType;text?:string;url?:string;alt?:string;caption?:string;language?:string};
+export type SourceReference={label:string;url:string};
+export type AdminTutorial={id:string;title:string;slug:string;excerpt:string;content:string;content_blocks?:ContentBlock[]|null;cover_url:string|null;category:string;difficulty:"beginner"|"intermediate"|"advanced";duration_minutes:number;tools:string[];is_featured:boolean;status:"draft"|"published"|"archived";seo_title:string|null;seo_description:string|null;author_name:string;author_bio:string|null;source_references:SourceReference[];reviewed_at:string|null;source_url?:string|null;source_site?:string|null;source_imported_at?:string|null;copyright_confirmed?:boolean;published_at:string|null;created_at:string;updated_at:string};
+export type TutorialActionState={error?:string;fieldErrors?:Record<string,string[]>};
+export type AdminTutorialRow={id:string;title:string;slug:string;category:string;status:string;published_at:string|null;updated_at:string;is_featured:boolean;difficulty:string;duration_minutes:number};

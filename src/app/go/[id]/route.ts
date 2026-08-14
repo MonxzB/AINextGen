@@ -1,0 +1,4 @@
+import { NextResponse } from "next/server";
+import { headers } from "next/headers";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
+export async function GET(request:Request,{params}:{params:Promise<{id:string}>}){if(!isSupabaseConfigured())return NextResponse.redirect(new URL("/products",request.url));const supabase=await createClient();const id=(await params).id;const {data:link}=await supabase.from("affiliate_links").select("url,product_id").eq("id",id).eq("is_active",true).single();if(!link)return NextResponse.redirect(new URL("/products",request.url));const h=await headers();await supabase.from("affiliate_clicks").insert({affiliate_link_id:id,product_id:link.product_id,referrer:h.get("referer"),user_agent:h.get("user-agent")});return NextResponse.redirect(link.url);}

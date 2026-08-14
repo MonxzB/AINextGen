@@ -1,0 +1,6 @@
+import type { Metadata } from "next";
+import { Mail, MessageSquareText } from "lucide-react";
+import { InfoPage } from "@/components/info-page";
+import { siteConfig } from "@/lib/site";
+export const metadata:Metadata={title:"Liên hệ",description:"Liên hệ AINextGen để góp ý nội dung, báo lỗi hoặc đề xuất chủ đề AI.",alternates:{canonical:"/contact"}};
+export default function ContactPage(){return <InfoPage eyebrow="Liên hệ" title="Góp ý để AINextGen tốt hơn." intro="Bạn có thể báo nội dung chưa chính xác, đề xuất tutorial hoặc trao đổi hợp tác qua email."><section className="grid gap-4 sm:grid-cols-2"><a href={`mailto:${siteConfig.email}`} className="rounded-2xl border border-white/10 bg-white/5 p-5"><Mail/><h2 className="mt-4 !text-lg">Email</h2><p className="mt-1 !text-sm">{siteConfig.email}</p></a><div className="rounded-2xl border border-white/10 bg-white/5 p-5"><MessageSquareText/><h2 className="mt-4 !text-lg">Khi báo lỗi bài viết</h2><p className="mt-1 !text-sm">Hãy gửi URL bài, đoạn cần kiểm tra và nguồn đối chiếu nếu có.</p></div></section><section><h2>Phản hồi nội dung</h2><p className="mt-3">Các góp ý liên quan đến tính chính xác được ưu tiên xem xét. AINextGen có thể cập nhật bài và ghi nhận ngày kiểm chứng mới sau khi xác minh.</p></section></InfoPage>}

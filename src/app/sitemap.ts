@@ -1,0 +1,4 @@
+import type { MetadataRoute } from "next";
+import { getTutorialSummaries as getTutorials } from "@/lib/tutorial-data";
+import { absoluteUrl } from "@/lib/site";
+export default async function sitemap():Promise<MetadataRoute.Sitemap>{const tutorials=await getTutorials();const info=["/about","/contact","/privacy","/terms","/editorial-policy"].map(path=>({url:absoluteUrl(path),lastModified:new Date("2026-08-14"),changeFrequency:"yearly" as const,priority:.4}));return [{url:absoluteUrl("/"),lastModified:new Date(),changeFrequency:"weekly",priority:1},{url:absoluteUrl("/tutorials"),lastModified:new Date(),changeFrequency:"weekly",priority:.9},...info,...tutorials.map(t=>({url:absoluteUrl(`/tutorials/${t.slug}`),lastModified:new Date(t.updated_at||t.published_at),changeFrequency:"monthly" as const,priority:t.is_featured?.8:.7}))];}

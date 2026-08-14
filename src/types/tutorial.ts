@@ -1,0 +1,3 @@
+import type { ContentBlock, SourceReference } from "@/types/admin";
+export type Tutorial={id:string;title:string;slug:string;excerpt:string;content:string;content_blocks?:ContentBlock[]|null;cover_url:string|null;difficulty:"beginner"|"intermediate"|"advanced";duration_minutes:number;category:string;tools:string[];is_featured:boolean;seo_title?:string|null;seo_description?:string|null;author_name?:string;author_bio?:string|null;source_references?:SourceReference[];reviewed_at?:string|null;published_at:string;updated_at?:string;};
+export type TutorialSummary=Omit<Tutorial,"content">;

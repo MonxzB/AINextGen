@@ -1,0 +1,6 @@
+"use client";
+import { useEffect, useState } from "react";
+import { Moon, Sun } from "lucide-react";
+type Theme="light"|"dark";
+function applyTheme(theme:Theme){document.documentElement.dataset.theme=theme;document.documentElement.style.colorScheme=theme;localStorage.setItem("ainext-theme",theme);document.querySelector('meta[name="theme-color"]')?.setAttribute("content",theme==="dark"?"#070a12":"#f7f8fc");}
+export function ThemeToggle({className=""}:{className?:string}){const [theme,setTheme]=useState<Theme>("dark");useEffect(()=>{setTheme(document.documentElement.dataset.theme==="light"?"light":"dark")},[]);function toggle(){const next=theme==="dark"?"light":"dark";document.documentElement.classList.add("theme-transition");applyTheme(next);setTheme(next);window.setTimeout(()=>document.documentElement.classList.remove("theme-transition"),250)}const nextLabel=theme==="dark"?"Chuyển sang chế độ sáng":"Chuyển sang chế độ tối";return <button type="button" onClick={toggle} aria-label={nextLabel} title={nextLabel} className={`theme-toggle grid size-10 shrink-0 place-items-center rounded-xl border transition hover:-translate-y-0.5 ${className}`}>{theme==="dark"?<Sun size={19}/>:<Moon size={19}/>}<span className="sr-only">{nextLabel}</span></button>}
