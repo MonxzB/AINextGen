@@ -38,13 +38,15 @@ export async function saveTutorial(_state:TutorialActionState,formData:FormData)
   if(sourceResult.error)return {error:sourceResult.error,fieldErrors:{source_references:[sourceResult.error]}};
   const {db,user}=await requireUser();
   const input=parsed.data;
-  const status=formData.get("intent")==="published"?"published":"draft";
+  const requestedStatus=formData.get("publication_intent")??formData.get("intent");
+  const status=requestedStatus==="published"?"published":"draft";
   let publishedAt:string|null=null;
   if(input.id){const {data}=await db.from("articles").select("published_at").eq("id",input.id).single();publishedAt=data?.published_at||null;}
   if(status==="published"&&!publishedAt)publishedAt=new Date().toISOString();
   const values={author_id:user.id,title:input.title,slug:input.slug||slugify(input.title),excerpt:input.excerpt,content:input.content,content_blocks:contentBlocks,cover_url:input.cover_url||null,category:input.category,difficulty:input.difficulty,duration_minutes:input.duration_minutes,tools:input.tools?.split(",").map((item)=>item.trim()).filter(Boolean)||[],is_featured:formData.get("is_featured")==="on",status,article_type:"blog",published_at:status==="published"?publishedAt:null,seo_title:input.seo_title||null,seo_description:input.seo_description||null,author_name:input.author_name,author_bio:input.author_bio||null,source_references:sourceResult.sources,reviewed_at:input.reviewed_at?new Date(`${input.reviewed_at}T12:00:00`).toISOString():null,updated_at:new Date().toISOString()};
-  const result=input.id?await db.from("articles").update(values).eq("id",input.id):await db.from("articles").insert(values);
+  const result=input.id?await db.from("articles").update(values).eq("id",input.id).select("id,status").single():await db.from("articles").insert(values).select("id,status").single();
   if(result.error)return {error:result.error.code==="23505"?"Slug đã tồn tại. Hãy chọn slug khác.":result.error.message.includes("content_blocks")?"Database chưa có block editor. Hãy chạy migration 005_article_block_editor.sql.":result.error.message.includes("author_name")||result.error.message.includes("source_references")||result.error.message.includes("reviewed_at")?"Database chưa có trường tác giả và kiểm chứng. Hãy chạy migration 007_content_experience.sql.":result.error.message};
+  if(result.data?.status!==status)return {error:"Database chưa lưu đúng trạng thái bài viết. Hãy tải lại trang và thử lại."};
   revalidateTag("tutorials");revalidatePath("/");revalidatePath("/tutorials");revalidatePath("/admin");revalidatePath("/admin/tutorials");if(input.id)revalidatePath(`/tutorials/${values.slug}`);
   const requestedReturn=String(formData.get("return_to")||"");const returnTo=requestedReturn.startsWith("/admin/tutorials")?requestedReturn:"/admin/tutorials";redirect(`${returnTo}${returnTo.includes("?")?"&":"?"}saved=1`);
 }

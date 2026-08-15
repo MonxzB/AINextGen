@@ -1,9 +1,19 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { createHash } from "node:crypto";
+import { after, NextResponse, type NextRequest } from "next/server";
+import { allowAnalyticsRequest } from "@/lib/analytics-rate-limit";
+import { getAdminClient } from "@/lib/supabase/admin";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const VISITOR_COOKIE = "ainext_visitor";
 const SESSION_COOKIE = "ainext_session";
+
+function isAnalyticsConfigured() {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL !== "https://your-project.supabase.co" &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+  );
+}
 
 function deviceFromUserAgent(userAgent: string) {
   if (/ipad|tablet|playbook|silk/i.test(userAgent)) return "tablet";
@@ -22,8 +32,18 @@ function referrerHost(referrer: unknown, requestUrl: string) {
   }
 }
 
+function requestFingerprint(request: NextRequest) {
+  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",", 1)[0]?.trim();
+  const address = forwardedFor || request.headers.get("x-real-ip") || "unknown";
+  const userAgent = request.headers.get("user-agent")?.slice(0, 180) || "unknown";
+  return createHash("sha256").update(`${address}|${userAgent}`).digest("hex");
+}
+
 export async function POST(request: NextRequest) {
-  if (!isSupabaseConfigured()) return NextResponse.json({ ok: false }, { status: 503 });
+  if (!isAnalyticsConfigured()) return NextResponse.json({ ok: false }, { status: 503 });
+  if (!allowAnalyticsRequest(requestFingerprint(request))) {
+    return NextResponse.json({ ok: false }, { status: 429, headers: { "Retry-After": "60" } });
+  }
 
   let payload: { path?: unknown; referrer?: unknown };
   try {
@@ -46,16 +66,18 @@ export async function POST(request: NextRequest) {
     ? request.cookies.get(SESSION_COOKIE)!.value
     : crypto.randomUUID();
 
-  const db = await createClient();
-  const { error } = await db.rpc("record_page_view", {
+  const pageView = {
     p_path: path,
     p_session_id: sessionId,
     p_visitor_id: visitorId,
     p_referrer_host: referrerHost(payload.referrer, request.url),
     p_device_type: deviceFromUserAgent(request.headers.get("user-agent") ?? ""),
-  });
+  };
 
-  if (error) return NextResponse.json({ ok: false }, { status: 500 });
+  // Analytics is best-effort and must never delay navigation for the visitor.
+  after(async () => {
+    await getAdminClient().rpc("record_page_view", pageView as never);
+  });
 
   const response = NextResponse.json({ ok: true });
   const cookieOptions = {

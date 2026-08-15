@@ -29,6 +29,7 @@ export function TutorialEditor({ tutorial, defaultCategory }: { tutorial?: Admin
   const [seoTitle, setSeoTitle] = useState(tutorial?.seo_title ?? "");
   const [seoDescription, setSeoDescription] = useState(tutorial?.seo_description ?? "");
   const coverInput = useRef<HTMLInputElement>(null);
+  const publicationIntent = useRef<HTMLInputElement>(null);
   const previewTitle = useMemo(() => seoTitle.trim() || title.trim() || "Tiêu đề tutorial", [seoTitle, title]);
   const previewDescription = seoDescription.trim() || excerpt.trim() || "Mô tả ngắn sẽ xuất hiện trên Google và khi chia sẻ bài viết.";
   const selectedCategory = tutorial?.category ?? defaultCategory ?? "Prompting";
@@ -64,6 +65,7 @@ export function TutorialEditor({ tutorial, defaultCategory }: { tutorial?: Admin
     <form action={formAction} className="mt-7 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
       {tutorial && <input type="hidden" name="id" value={tutorial.id} />}
       <input type="hidden" name="return_to" value={returnTo} />
+      <input ref={publicationIntent} type="hidden" name="publication_intent" defaultValue={tutorial?.status === "published" ? "published" : "draft"}/>
       <section className="card min-w-0 space-y-5 p-5 sm:p-7">
         {state.error && <div role="alert" className="rounded-xl border border-red-500/30 bg-red-50 p-4 text-sm text-red-700"><b>Chưa thể lưu.</b> {state.error}</div>}
         {tutorial?.source_url && <div className="rounded-xl border border-cyan-500/25 bg-cyan-500/10 p-4 text-sm"><p className="font-bold">Bài nhập từ {tutorial.source_site || "nguồn bên ngoài"}</p><p className="mt-1 break-all text-xs text-black/50"><a href={tutorial.source_url} target="_blank" rel="noreferrer" className="hover:text-brand-700">{tutorial.source_url}</a></p><p className="mt-2 text-xs text-black/45">Hãy kiểm chứng và biên tập lại trước khi xuất bản.</p></div>}
@@ -110,8 +112,8 @@ export function TutorialEditor({ tutorial, defaultCategory }: { tutorial?: Admin
           </div>
           <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3 text-sm font-semibold"><input type="checkbox" name="is_featured" defaultChecked={tutorial?.is_featured} className="size-4 accent-brand-600" /> Đánh dấu bài nổi bật</label>
           <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
-            <button type="submit" name="intent" value="draft" disabled={pending} className="btn-secondary gap-2 disabled:opacity-50"><Save size={17} />{pending ? "Đang lưu..." : "Lưu bản nháp"}</button>
-            <button type="submit" name="intent" value="published" disabled={pending} className="btn-primary gap-2 disabled:opacity-50"><Send size={17} />{pending ? "Đang lưu..." : tutorial?.status === "published" ? "Cập nhật bài" : "Xuất bản"}</button>
+            <button type="submit" name="intent" value="draft" onClick={()=>{if(publicationIntent.current)publicationIntent.current.value="draft";}} disabled={pending} className="btn-secondary gap-2 disabled:opacity-50"><Save size={17} />{pending ? "Đang lưu..." : "Lưu bản nháp"}</button>
+            <button type="submit" name="intent" value="published" onClick={()=>{if(publicationIntent.current)publicationIntent.current.value="published";}} disabled={pending} className="btn-primary gap-2 disabled:opacity-50"><Send size={17} />{pending ? "Đang lưu..." : tutorial?.status === "published" ? "Cập nhật bài" : "Xuất bản"}</button>
             {tutorial&&<Link href={`/preview/tutorials/${tutorial.id}`} target="_blank" className="btn-secondary gap-2 sm:col-span-2 xl:col-span-1"><Eye size={17}/> Xem trước bản hiện tại</Link>}
           </div>
         </section>

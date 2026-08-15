@@ -8,9 +8,15 @@ function LegacyContent({value}:{value:string}){
   return <div className="space-y-4 text-[1.05rem] leading-8 text-black/60">{value.split("\n").map((line)=>line.trim()).filter(Boolean).map((line,index)=>line.startsWith("## ")?<h2 id={articleHeadingId(line.slice(3),index)} key={index} className="!mt-10 scroll-mt-24 text-2xl font-black text-ink">{line.slice(3)}</h2>:/^\d+\. /.test(line)?<p key={index} className="rounded-xl border border-white/10 bg-white/5 p-4 text-ink">{line}</p>:line.startsWith("- ")?<p key={index} className="flex gap-2"><CheckCircle2 className="mt-1 shrink-0 text-cyan-300" size={18}/>{line.slice(2)}</p>:<p key={index}>{line.replaceAll("**","")}</p>)}</div>;
 }
 
-export function ArticleContent({blocks,legacyContent}:{blocks?:ContentBlock[]|null;legacyContent:string}){
-  if(!blocks?.length)return <LegacyContent value={legacyContent}/>;
-  return <div className="space-y-6 text-[1.05rem] leading-8 text-black/60">{blocks.map((block,index)=>{
+export function ArticleContent({blocks,legacyContent,intro}:{blocks?:ContentBlock[]|null;legacyContent:string;intro?:string}){
+  const normalizedIntro=intro?.replace(/\s+/g," ").trim().toLocaleLowerCase("vi");
+  const introBlock=intro?<p className="mb-9 border-l-4 border-brand-500 pl-5 text-xl font-medium leading-9 text-ink sm:pl-6">{intro}</p>:null;
+  if(!blocks?.length)return <>{introBlock}<LegacyContent value={legacyContent}/></>;
+  return <div className="space-y-6 text-[1.05rem] leading-8 text-black/60">{introBlock}{blocks.map((block,index)=>{
+    if(block.type==="paragraph"&&normalizedIntro){
+      const normalizedText=block.text?.replace(/\s+/g," ").trim().toLocaleLowerCase("vi");
+      if(normalizedText&&normalizedText.length>=40&&normalizedIntro.includes(normalizedText))return null;
+    }
     if(block.type==="heading")return <h2 id={articleHeadingId(block.text??"",index)} key={block.id} className="!mt-12 scroll-mt-24 text-2xl font-black text-ink">{block.text}</h2>;
     if(block.type==="image"&&block.url)return <figure key={block.id} className="!my-9"><div className="relative aspect-video overflow-hidden rounded-2xl border border-white/10 bg-white/5"><Image src={block.url} alt={block.alt||block.caption||"Hình minh họa bài viết"} fill loading="lazy" sizes="(max-width: 1024px) 100vw, 760px" className="object-contain"/></div>{block.caption&&<figcaption className="mt-3 text-center text-sm text-black/45">{block.caption}</figcaption>}</figure>;
     if(block.type==="code")return <section key={block.id} className="overflow-hidden rounded-2xl border border-white/10 bg-[#070a12] text-white"><div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5"><span className="font-mono text-xs font-bold uppercase tracking-wider text-cyan-300">{block.language||"code"}</span><CopyBlockButton text={block.text??""} label="Sao chép code"/></div><pre className="overflow-x-auto p-5 text-sm leading-7"><code>{block.text}</code></pre></section>;

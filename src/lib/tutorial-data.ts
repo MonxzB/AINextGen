@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache";
 import type { Tutorial, TutorialSummary } from "@/types/tutorial";
 import { getPublicClient } from "@/lib/supabase/public";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
+import { enrichTutorial } from "@/lib/tutorial-enrichment";
 const content={
  prompt:`## Bạn sẽ học được gì?\n\nPrompt tốt không cần dài, nhưng phải đưa cho AI đủ bối cảnh, mục tiêu và tiêu chuẩn đầu ra.\n\n## Công thức 5 phần\n\n1. **Vai trò:** AI cần suy nghĩ như ai?\n2. **Bối cảnh:** Vấn đề và dữ liệu liên quan.\n3. **Nhiệm vụ:** Kết quả cụ thể cần tạo.\n4. **Ràng buộc:** Độ dài, giọng điệu, điều không được làm.\n5. **Định dạng:** Bảng, checklist hay từng bước.\n\n## Prompt mẫu\n\nBạn là chuyên gia nội dung B2B. Hãy xây dựng dàn ý bài viết dành cho chủ doanh nghiệp nhỏ, giọng văn thực tế, không dùng thuật ngữ khó. Trả về bảng gồm tiêu đề, ý chính và ví dụ.\n\n## Mẹo nâng cao\n\nYêu cầu AI tự kiểm tra câu trả lời theo 3 tiêu chí trước khi trả kết quả cuối cùng.`,
  workflow:`## Mục tiêu workflow\n\nBiến ghi chú thô thành bản tóm tắt, danh sách việc cần làm và email follow-up trong vài phút.\n\n## Quy trình\n\n1. Thu thập transcript hoặc ghi chú.\n2. Dùng AI tách quyết định, rủi ro và action items.\n3. Chuẩn hóa người phụ trách và deadline.\n4. Tạo email follow-up để người dùng duyệt.\n\n## Kiểm soát chất lượng\n\nKhông tự động gửi nội dung do AI tạo. Luôn có bước con người kiểm tra tên, số liệu và cam kết.`,
@@ -21,29 +22,38 @@ const publicFields="id,title,slug,excerpt,content,content_blocks,cover_url,diffi
 const summaryFields="id,title,slug,excerpt,cover_url,difficulty,duration_minutes,category,tools,is_featured,published_at,updated_at";
 const legacyPublicFields="id,title,slug,excerpt,content,content_blocks,cover_url,difficulty,duration_minutes,category,tools,is_featured,seo_title,seo_description,published_at,updated_at";
 
-const demoSummaries=()=>demoTutorials.map((tutorial)=>({id:tutorial.id,title:tutorial.title,slug:tutorial.slug,excerpt:tutorial.excerpt,cover_url:tutorial.cover_url,difficulty:tutorial.difficulty,duration_minutes:tutorial.duration_minutes,category:tutorial.category,tools:tutorial.tools,is_featured:tutorial.is_featured,published_at:tutorial.published_at,updated_at:tutorial.updated_at}));
+const demoSummaries=()=>demoTutorials.map((tutorial)=>enrichTutorial({id:tutorial.id,title:tutorial.title,slug:tutorial.slug,excerpt:tutorial.excerpt,cover_url:tutorial.cover_url,difficulty:tutorial.difficulty,duration_minutes:tutorial.duration_minutes,category:tutorial.category,tools:tutorial.tools,is_featured:tutorial.is_featured,published_at:tutorial.published_at,updated_at:tutorial.updated_at}));
 
-const cachedTutorials=unstable_cache(async()=>{
+async function fetchTutorials(){
   const db=getPublicClient();
   const result=await db.from("articles").select(publicFields).eq("status","published").order("published_at",{ascending:false});
-  if(!result.error)return (result.data as unknown as Tutorial[])||[];
+  if(!result.error)return ((result.data as unknown as Tutorial[])||[]).map(enrichTutorial);
   const fallback=await db.from("articles").select(legacyPublicFields).eq("status","published").order("published_at",{ascending:false});
-  return (fallback.data as unknown as Tutorial[])||[];
-},["ainextgen-public-tutorials-v3"],{revalidate:300,tags:["tutorials"]});
+  return ((fallback.data as unknown as Tutorial[])||[]).map(enrichTutorial);
+}
+const cachedTutorials=unstable_cache(fetchTutorials,["ainextgen-public-tutorials-v4"],{revalidate:300,tags:["tutorials"]});
 
-const cachedSummaries=unstable_cache(async()=>{
+async function fetchTutorialSummaries(){
   const {data}=await getPublicClient().from("articles").select(summaryFields).eq("status","published").order("published_at",{ascending:false});
-  return (data as TutorialSummary[])||[];
-},["ainextgen-public-tutorial-summaries-v3"],{revalidate:300,tags:["tutorials"]});
+  return ((data as TutorialSummary[])||[]).map(enrichTutorial);
+}
+const cachedSummaries=unstable_cache(fetchTutorialSummaries,["ainextgen-public-tutorial-summaries-v4"],{revalidate:300,tags:["tutorials"]});
 
-const cachedTutorial=unstable_cache(async(slug:string)=>{
+async function fetchTutorial(slug:string){
   const db=getPublicClient();
   const result=await db.from("articles").select(publicFields).eq("slug",slug).eq("status","published").single();
-  if(!result.error)return result.data as unknown as Tutorial|null;
+  const tutorial=result.data as unknown as Tutorial|null;
+  if(!result.error)return tutorial ? enrichTutorial(tutorial) : null;
   const fallback=await db.from("articles").select(legacyPublicFields).eq("slug",slug).eq("status","published").single();
-  return fallback.data as unknown as Tutorial|null;
-},["ainextgen-public-tutorial-v3"],{revalidate:300,tags:["tutorials"]});
+  const legacyTutorial=fallback.data as unknown as Tutorial|null;
+  return legacyTutorial ? enrichTutorial(legacyTutorial) : null;
+}
+const cachedTutorial=unstable_cache(fetchTutorial,["ainextgen-public-tutorial-v4"],{revalidate:300,tags:["tutorials"]});
 
-export const getTutorials=cache(async():Promise<Tutorial[]>=>isSupabaseConfigured()?cachedTutorials():demoTutorials);
-export const getTutorialSummaries=cache(async():Promise<TutorialSummary[]>=>isSupabaseConfigured()?cachedSummaries():demoSummaries());
-export const getTutorial=cache(async(slug:string):Promise<Tutorial|null>=>isSupabaseConfigured()?cachedTutorial(slug):demoTutorials.find((tutorial)=>tutorial.slug===slug)||null);
+const loadTutorials=process.env.NODE_ENV==="development"?fetchTutorials:cachedTutorials;
+const loadTutorialSummaries=process.env.NODE_ENV==="development"?fetchTutorialSummaries:cachedSummaries;
+const loadTutorial=process.env.NODE_ENV==="development"?fetchTutorial:cachedTutorial;
+
+export const getTutorials=cache(async():Promise<Tutorial[]>=>isSupabaseConfigured()?loadTutorials():demoTutorials);
+export const getTutorialSummaries=cache(async():Promise<TutorialSummary[]>=>isSupabaseConfigured()?loadTutorialSummaries():demoSummaries());
+export const getTutorial=cache(async(slug:string):Promise<Tutorial|null>=>isSupabaseConfigured()?loadTutorial(slug):demoTutorials.find((tutorial)=>tutorial.slug===slug)||null);

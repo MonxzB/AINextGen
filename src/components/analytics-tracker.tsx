@@ -14,14 +14,20 @@ export function AnalyticsTracker() {
     const storageKey = `ainext-view:${pathname}`;
     const lastTracked = Number(sessionStorage.getItem(storageKey) ?? 0);
     if (now - lastTracked < 2_000) return;
-    sessionStorage.setItem(storageKey, String(now));
 
-    void fetch("/api/analytics/page-view", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: pathname, referrer: document.referrer }),
-      keepalive: true,
-    }).catch(() => undefined);
+    const timer = window.setTimeout(() => {
+      // Mark the view only when the request is actually dispatched. In React
+      // Strict Mode the first effect can be cleaned up before this timer fires.
+      sessionStorage.setItem(storageKey, String(Date.now()));
+      void fetch("/api/analytics/page-view", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: pathname, referrer: document.referrer }),
+        keepalive: true,
+      }).catch(() => undefined);
+    }, 600);
+
+    return () => window.clearTimeout(timer);
   }, [pathname]);
 
   return null;
