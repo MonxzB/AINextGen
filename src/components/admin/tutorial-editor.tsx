@@ -129,7 +129,7 @@ export function TutorialEditor({ tutorial, defaultCategory }: { tutorial?: Admin
         <section className="card p-5">
           <div className="flex items-center justify-between"><h2 className="font-black">SEO Google</h2><span className="text-xs font-semibold text-brand-700">Xem trước</span></div>
           <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
-            <p className="truncate text-xs text-black/50">ainextgen.vn › tutorials › {slug || "duong-dan"}</p>
+            <p className="truncate text-xs text-black/50">ainextgen.io.vn › tutorials › {slug || "duong-dan"}</p>
             <p className="mt-1 line-clamp-2 text-base font-semibold text-brand-700">{previewTitle}</p>
             <p className="mt-1 line-clamp-3 text-xs leading-5 text-black/50">{previewDescription}</p>
           </div>
