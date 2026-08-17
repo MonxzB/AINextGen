@@ -2,11 +2,12 @@ import type { NextConfig } from "next";
 const isDevelopment=process.env.NODE_ENV==="development";
 const contentSecurityPolicy=[
  "default-src 'self'",
- `script-src 'self' 'unsafe-inline'${isDevelopment?" 'unsafe-eval'":""}`,
+ `script-src 'self' 'unsafe-inline'${isDevelopment?" 'unsafe-eval'":""} https://*.googlesyndication.com https://*.googleadservices.com https://*.googletagservices.com https://*.doubleclick.net`,
  "style-src 'self' 'unsafe-inline'",
  "img-src 'self' data: blob: https:",
  "font-src 'self' data:",
- "connect-src 'self' https://*.supabase.co",
+ "connect-src 'self' https://*.supabase.co https://*.googlesyndication.com https://*.google.com https://*.doubleclick.net",
+ "frame-src 'self' https://*.googlesyndication.com https://*.google.com https://*.doubleclick.net",
  "frame-ancestors 'none'",
  "base-uri 'self'",
  "form-action 'self' mailto:",
