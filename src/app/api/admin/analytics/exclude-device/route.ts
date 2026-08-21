@@ -30,24 +30,28 @@ export async function POST(request: NextRequest) {
   const storedVisitorId = request.cookies.get(VISITOR_COOKIE)?.value ?? "";
   const visitorId = UUID_PATTERN.test(storedVisitorId) ? storedVisitorId : crypto.randomUUID();
 
+  const cookieOptions = {
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: ONE_YEAR,
+  };
+  let removedViews = 0;
+  let cleanupError: string | null = null;
+
   try {
     const { error, count } = await getAdminClient()
       .from("page_views")
       .delete({ count: "exact" })
       .eq("visitor_id", visitorId);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-    const response = NextResponse.json({ ok: true, removed_views: count ?? 0 });
-    const cookieOptions = {
-      sameSite: "lax" as const,
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: ONE_YEAR,
-    };
-    response.cookies.set(VISITOR_COOKIE, visitorId, { ...cookieOptions, httpOnly: true });
-    response.cookies.set(OPT_OUT_COOKIE, "1", { ...cookieOptions, httpOnly: false });
-    return response;
+    if (error) cleanupError = error.message;
+    else removedViews = count ?? 0;
   } catch {
-    return NextResponse.json({ error: "Không thể loại trừ thiết bị khỏi analytics." }, { status: 503 });
+    cleanupError = "Không thể xóa lượt xem cũ của thiết bị.";
   }
+
+  const response = NextResponse.json({ ok: true, removed_views: removedViews, cleanup_error: cleanupError });
+  response.cookies.set(VISITOR_COOKIE, visitorId, { ...cookieOptions, httpOnly: true });
+  response.cookies.set(OPT_OUT_COOKIE, "1", { ...cookieOptions, httpOnly: false });
+  return response;
 }

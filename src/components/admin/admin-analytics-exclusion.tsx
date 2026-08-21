@@ -2,20 +2,18 @@
 
 import { useEffect } from "react";
 
-const SYNC_KEY = "ainext-admin-analytics-exclusion-v1";
+const OPT_OUT_COOKIE = "ainext_analytics_opt_out=1";
+const ONE_YEAR = 60 * 60 * 24 * 365;
 
 export function AdminAnalyticsExclusion() {
   useEffect(() => {
-    if (sessionStorage.getItem(SYNC_KEY)) return;
-    sessionStorage.setItem(SYNC_KEY, "pending");
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${OPT_OUT_COOKIE}; Path=/; Max-Age=${ONE_YEAR}; SameSite=Lax${secure}`;
 
     void fetch("/api/admin/analytics/exclude-device", {
       method: "POST",
       credentials: "same-origin",
-    }).then((response) => {
-      if (response.ok) sessionStorage.setItem(SYNC_KEY, "synced");
-      else sessionStorage.removeItem(SYNC_KEY);
-    }).catch(() => sessionStorage.removeItem(SYNC_KEY));
+    }).catch(() => undefined);
   }, []);
 
   return null;
