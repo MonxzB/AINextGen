@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Activity, ShieldCheck } from "lucide-react";
+import { AnalyticsEngagementPanel, type EngagementAnalytics } from "@/components/admin/analytics-engagement-panel";
 import { AnalyticsLocationPanel, type LocationAnalytics } from "@/components/admin/analytics-location-panel";
 import { AnalyticsPanel, type AnalyticsOverview } from "@/components/admin/analytics-panel";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
@@ -28,18 +29,21 @@ export default async function AdminAnalyticsPage({ searchParams }: { searchParam
   let daily: DailyAnalytics[] = [];
   let dailyReportAvailable = true;
   let locations: LocationAnalytics | null = null;
+  let engagement: EngagementAnalytics | null = null;
 
   if (isSupabaseConfigured()) {
     const db = await createClient();
-    const [overviewResult, dailyResult, locationResult] = await Promise.all([
+    const [overviewResult, dailyResult, locationResult, engagementResult] = await Promise.all([
       db.rpc("get_analytics_overview", { p_days: days }),
       db.rpc("get_analytics_daily", { p_days: days }),
       db.rpc("get_analytics_locations", { p_days: days }),
+      db.rpc("get_article_engagement", { p_days: days }),
     ]);
     overview = overviewResult.data as AnalyticsOverview | null;
     daily = Array.isArray(dailyResult.data) ? dailyResult.data as DailyAnalytics[] : [];
     dailyReportAvailable = !dailyResult.error;
     locations = locationResult.error ? null : locationResult.data as LocationAnalytics | null;
+    engagement = engagementResult.error ? null : engagementResult.data as EngagementAnalytics | null;
   }
 
   return <>
@@ -53,6 +57,8 @@ export default async function AdminAnalyticsPage({ searchParams }: { searchParam
     <div className="mt-5 flex gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/[.07] p-4 text-sm leading-6"><ShieldCheck className="mt-0.5 shrink-0 text-emerald-400" size={20}/><p><b>Đang lọc lượt truy cập rác:</b> chỉ nhận request cùng website, giới hạn 15 request/phút, không đếm lại cùng trang trong một phiên 30 phút và có hạn mức bổ sung tại database. <b>Thiết bị đang đăng nhập Admin được loại trừ khỏi cả trang quản trị và website công khai.</b></p></div>
 
     <AnalyticsPanel data={overview}/>
+
+    <AnalyticsEngagementPanel data={engagement} days={days}/>
 
     <section className="card mt-6 overflow-hidden" aria-labelledby="daily-detail-heading">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 p-5"><div><h2 id="daily-detail-heading" className="flex items-center gap-2 font-black"><Activity className="text-brand-700" size={20}/> Chi tiết từng ngày</h2><p className="mt-1 text-xs text-black/50">Khách, phiên, nguồn và thiết bị trong {days} ngày gần nhất</p></div><span className="text-xs font-semibold text-black/40">Asia/Ho_Chi_Minh</span></div>

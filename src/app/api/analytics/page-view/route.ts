@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
 
   // Analytics is best-effort and must never delay navigation for the visitor.
   after(async () => {
-    await getAdminClient().rpc("record_page_view_v2", pageView as never);
+    await getAdminClient().rpc("record_page_view_v3", pageView as never);
   });
 
   const response = NextResponse.json({ ok: true });
