@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { after, NextResponse, type NextRequest } from "next/server";
 import { allowAnalyticsRequest } from "@/lib/analytics-rate-limit";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { normalizeVercelRegion } from "@/lib/vietnam-regions";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const VISITOR_COOKIE = "ainext_visitor";
@@ -84,17 +85,24 @@ export async function POST(request: NextRequest) {
     ? request.cookies.get(SESSION_COOKIE)!.value
     : crypto.randomUUID();
 
+  const location = normalizeVercelRegion(
+    request.headers.get("x-vercel-ip-country"),
+    request.headers.get("x-vercel-ip-country-region"),
+  );
   const pageView = {
     p_path: path,
     p_session_id: sessionId,
     p_visitor_id: visitorId,
     p_referrer_host: referrerHost(payload.referrer, request.url),
     p_device_type: deviceFromUserAgent(request.headers.get("user-agent") ?? ""),
+    p_country_code: location.countryCode,
+    p_region_code: location.regionCode,
+    p_province_name: location.provinceName,
   };
 
   // Analytics is best-effort and must never delay navigation for the visitor.
   after(async () => {
-    await getAdminClient().rpc("record_page_view", pageView as never);
+    await getAdminClient().rpc("record_page_view_v2", pageView as never);
   });
 
   const response = NextResponse.json({ ok: true });
