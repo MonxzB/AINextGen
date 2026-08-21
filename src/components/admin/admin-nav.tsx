@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { BookOpen, Bot, CloudDownload, LayoutDashboard, Map, WandSparkles } from "lucide-react";
+import { BarChart3, BookOpen, Bot, CloudDownload, LayoutDashboard, Map, WandSparkles } from "lucide-react";
 
 const links=[
  {href:"/admin",label:"Tổng quan",icon:LayoutDashboard,exact:true},
+ {href:"/admin/analytics",label:"Phân tích truy cập",icon:BarChart3,exact:true},
  {href:"/admin/tutorials",label:"Tất cả nội dung",icon:BookOpen,category:""},
  {href:"/admin/tutorials?category=Prompting",label:"Prompt",icon:WandSparkles,category:"Prompting"},
  {href:"/admin/tutorials?category=Automation",label:"Automation",icon:Bot,category:"Automation"},

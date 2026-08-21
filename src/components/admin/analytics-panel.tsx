@@ -25,7 +25,7 @@ function percentage(value: number, total: number) {
   return total > 0 ? Math.round((value / total) * 100) : 0;
 }
 
-export function AnalyticsPanel({ data }: { data: AnalyticsOverview | null }) {
+export function AnalyticsPanel({ data, compact = false }: { data: AnalyticsOverview | null; compact?: boolean }) {
   if (!data) {
     return <section className="card mt-6 p-6">
       <div className="flex items-center gap-3">
@@ -46,6 +46,19 @@ export function AnalyticsPanel({ data }: { data: AnalyticsOverview | null }) {
     [MousePointerClick, "Phiên truy cập", data.sessions],
     [CalendarDays, "Lượt xem hôm nay", data.today_views],
   ] as const;
+
+  if (compact) {
+    return <section className="mt-7" aria-labelledby="analytics-heading">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div><p className="text-xs font-black tracking-[.18em] text-brand-700">FIRST-PARTY ANALYTICS</p><h2 id="analytics-heading" className="mt-1 text-xl font-black">Lưu lượng website</h2></div>
+        <Link href="/admin/analytics" className="text-sm font-bold text-brand-700">Xem phân tích chi tiết →</Link>
+      </div>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {statCards.map(([Icon, label, value]) => <article key={label} className="card p-5"><Icon className="text-brand-700" size={20}/><p className="mt-4 text-3xl font-black">{number.format(value)}</p><p className="mt-1 text-sm text-black/50">{label}</p></article>)}
+      </div>
+      <p className="mt-3 text-xs text-black/45">Chỉ ghi nhận khi khách xem trang đủ 5 giây; cùng một trang chỉ được tính một lần mỗi phiên 30 phút.</p>
+    </section>;
+  }
 
   return <section className="mt-7" aria-labelledby="analytics-heading">
     <div className="flex flex-wrap items-end justify-between gap-3">

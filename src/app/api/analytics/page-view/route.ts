@@ -6,6 +6,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const VISITOR_COOKIE = "ainext_visitor";
 const SESSION_COOKIE = "ainext_session";
+const MINIMUM_ENGAGED_MS = 5_000;
 
 function isAnalyticsConfigured() {
   return Boolean(
@@ -39,13 +40,23 @@ function requestFingerprint(request: NextRequest) {
   return createHash("sha256").update(`${address}|${userAgent}`).digest("hex");
 }
 
+function isFirstPartyRequest(request: NextRequest) {
+  const origin = request.headers.get("origin");
+  const fetchSite = request.headers.get("sec-fetch-site");
+  return origin === request.nextUrl.origin && (!fetchSite || fetchSite === "same-origin");
+}
+
 export async function POST(request: NextRequest) {
   if (!isAnalyticsConfigured()) return NextResponse.json({ ok: false }, { status: 503 });
-  if (!allowAnalyticsRequest(requestFingerprint(request))) {
+  if (!isFirstPartyRequest(request)) return NextResponse.json({ ok: false }, { status: 403 });
+  if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
+    return NextResponse.json({ ok: false }, { status: 415 });
+  }
+  if (!allowAnalyticsRequest(requestFingerprint(request), 15, 60_000)) {
     return NextResponse.json({ ok: false }, { status: 429, headers: { "Retry-After": "60" } });
   }
 
-  let payload: { path?: unknown; referrer?: unknown };
+  let payload: { path?: unknown; referrer?: unknown; engaged_ms?: unknown };
   try {
     payload = await request.json();
   } catch {
@@ -56,6 +67,9 @@ export async function POST(request: NextRequest) {
     ? payload.path.split(/[?#]/, 1)[0].trim()
     : "";
   if (!path.startsWith("/") || path.length > 300) {
+    return NextResponse.json({ ok: false }, { status: 400 });
+  }
+  if (typeof payload.engaged_ms !== "number" || !Number.isFinite(payload.engaged_ms) || payload.engaged_ms < MINIMUM_ENGAGED_MS) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
 
