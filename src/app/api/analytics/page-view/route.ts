@@ -6,6 +6,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const VISITOR_COOKIE = "ainext_visitor";
 const SESSION_COOKIE = "ainext_session";
+const OPT_OUT_COOKIE = "ainext_analytics_opt_out";
 const MINIMUM_ENGAGED_MS = 5_000;
 
 function isAnalyticsConfigured() {
@@ -47,6 +48,9 @@ function isFirstPartyRequest(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (request.cookies.get(OPT_OUT_COOKIE)?.value === "1") {
+    return NextResponse.json({ ok: true, skipped: true });
+  }
   if (!isAnalyticsConfigured()) return NextResponse.json({ ok: false }, { status: 503 });
   if (!isFirstPartyRequest(request)) return NextResponse.json({ ok: false }, { status: 403 });
   if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {

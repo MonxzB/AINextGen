@@ -97,16 +97,16 @@ begin
       coalesce((
         select page.path
         from public.page_views page
-        where page.created_at >= series.day::timestamp at time zone 'Asia/Ho_Chi_Minh'
-          and page.created_at < (series.day + 1)::timestamp at time zone 'Asia/Ho_Chi_Minh'
+        where page.created_at >= series.day::date::timestamp at time zone 'Asia/Ho_Chi_Minh'
+          and page.created_at < (series.day::date + 1)::timestamp at time zone 'Asia/Ho_Chi_Minh'
         group by page.path
         order by count(*) desc, page.path
         limit 1
       ), '—') as top_page
     from generate_series(v_start, v_today, interval '1 day') as series(day)
     left join public.page_views pv
-      on pv.created_at >= series.day::timestamp at time zone 'Asia/Ho_Chi_Minh'
-      and pv.created_at < (series.day + 1)::timestamp at time zone 'Asia/Ho_Chi_Minh'
+      on pv.created_at >= series.day::date::timestamp at time zone 'Asia/Ho_Chi_Minh'
+      and pv.created_at < (series.day::date + 1)::timestamp at time zone 'Asia/Ho_Chi_Minh'
     group by series.day
   ) rows;
 

@@ -11,6 +11,8 @@ export function AnalyticsTracker() {
 
   useEffect(() => {
     if (!pathname || navigator.doNotTrack === "1") return;
+    const optedOut = document.cookie.split(";").some((cookie) => cookie.trim() === "ainext_analytics_opt_out=1");
+    if (optedOut) return;
     if (pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/login") return;
 
     const storageKey = `ainext-view:${pathname}`;
