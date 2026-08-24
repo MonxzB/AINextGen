@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { after, NextResponse, type NextRequest } from "next/server";
 import { allowAnalyticsRequest } from "@/lib/analytics-rate-limit";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { deliverNotificationEmail } from "@/lib/notifications/email";
 import { normalizeVercelRegion } from "@/lib/vietnam-regions";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -102,7 +103,9 @@ export async function POST(request: NextRequest) {
 
   // Analytics is best-effort and must never delay navigation for the visitor.
   after(async () => {
-    await getAdminClient().rpc("record_page_view_v3", pageView as never);
+    const { data } = await getAdminClient().rpc("record_page_view_v4", pageView as never);
+    const result = data as { notification_id?: string | null } | null;
+    if (result?.notification_id) await deliverNotificationEmail(result.notification_id);
   });
 
   const response = NextResponse.json({ ok: true });
