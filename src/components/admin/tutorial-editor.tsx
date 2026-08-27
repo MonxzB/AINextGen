@@ -85,6 +85,21 @@ export function TutorialEditor({ tutorial, defaultCategory }: { tutorial?: Admin
           <FieldError errors={state.fieldErrors?.excerpt} />
         </div>
         <div><input type="hidden" name="content" value={content}/><ContentBlockEditor initialBlocks={tutorial?.content_blocks} legacyContent={tutorial?.content??""} onChange={(_,text)=>setContent(text)}/><FieldError errors={state.fieldErrors?.content}/><FieldError errors={state.fieldErrors?.content_blocks}/></div>
+        <section className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-black uppercase tracking-[.16em] text-cyan-500">English version</p><h2 className="mt-1 text-xl font-black">Bản dịch tiếng Anh</h2></div><span className="rounded-full bg-white/5 px-3 py-1 text-xs text-black/45">URL: /en/tutorials/{slug||"slug"}</span></div>
+          <p className="mt-2 text-sm leading-6 text-black/50">Chỉ bật xuất bản EN sau khi đã dịch đủ tiêu đề, mô tả và nội dung. Có thể dùng Markdown cho phần nội dung.</p>
+          <div className="mt-5 grid gap-4">
+            <label className="text-sm font-bold">English title<input className="input mt-2" name="title_en" defaultValue={tutorial?.title_en??""} maxLength={120} placeholder="Practical AI tutorial title"/></label>
+            <FieldError errors={state.fieldErrors?.title_en}/>
+            <label className="text-sm font-bold">English excerpt<textarea className="input mt-2" name="excerpt_en" defaultValue={tutorial?.excerpt_en??""} rows={3} maxLength={320} placeholder="What will the reader learn?"/></label>
+            <label className="text-sm font-bold">English content (Markdown)<textarea className="input mt-2 min-h-80 font-mono text-sm leading-6" name="content_en" defaultValue={tutorial?.content_en??""} rows={14} maxLength={120000} placeholder={"## What you will learn\n\nWrite the complete English article here..."}/></label>
+            <label className="text-sm font-bold">English author bio<textarea className="input mt-2" name="author_bio_en" defaultValue={tutorial?.author_bio_en??""} rows={3} maxLength={300}/></label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="text-sm font-bold">English SEO title<input className="input mt-2" name="seo_title_en" defaultValue={tutorial?.seo_title_en??""} maxLength={70}/></label>
+              <label className="text-sm font-bold">English meta description<textarea className="input mt-2" name="seo_description_en" defaultValue={tutorial?.seo_description_en??""} rows={3} maxLength={180}/></label>
+            </div>
+          </div>
+        </section>
         <div>
           <label htmlFor="cover_url" className="text-sm font-bold">Ảnh bìa</label>
           <div className="mt-2 grid gap-3 sm:grid-cols-[180px_1fr]">
@@ -96,6 +111,7 @@ export function TutorialEditor({ tutorial, defaultCategory }: { tutorial?: Admin
               <p className="text-xs text-black/45">JPG, PNG, WebP hoặc GIF · tối đa 8 MB.</p>
             </div>
           </div>
+          <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3 text-sm font-semibold"><input type="checkbox" name="is_english_published" defaultChecked={tutorial?.is_english_published} className="mt-0.5 size-4 accent-brand-600" /><span>Xuất bản bản tiếng Anh<span className="mt-1 block text-xs font-normal text-black/45">Bài sẽ xuất hiện tại /en và được thêm vào sitemap tiếng Anh.</span></span></label>
           <input ref={coverInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" onChange={(event) => uploadCover(event.target.files?.[0])} />
           <FieldError errors={state.fieldErrors?.cover_url} />
         </div>

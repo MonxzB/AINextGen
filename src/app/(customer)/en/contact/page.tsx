@@ -1,0 +1,6 @@
+import type { Metadata } from "next";
+import { Mail, MessageSquareText } from "lucide-react";
+import { InfoPage } from "@/components/info-page";
+import { siteConfig } from "@/lib/site";
+export const metadata:Metadata={title:"Contact",description:"Contact AINextGen to suggest a topic, report an error, or discuss collaboration.",alternates:{canonical:"/en/contact",languages:{"vi-VN":"/contact",en:"/en/contact","x-default":"/contact"}}};
+export default function ContactPage(){return <InfoPage eyebrow="Contact" title="Help us make AINextGen better." intro="Report inaccurate content, suggest a tutorial, or discuss collaboration by email."><section className="grid gap-4 sm:grid-cols-2"><a href={`mailto:${siteConfig.email}`} className="rounded-2xl border border-white/10 bg-white/5 p-5"><Mail/><h2 className="mt-4 !text-lg">Email</h2><p className="mt-1 !text-sm">{siteConfig.email}</p></a><div className="rounded-2xl border border-white/10 bg-white/5 p-5"><MessageSquareText/><h2 className="mt-4 !text-lg">Reporting an article issue</h2><p className="mt-1 !text-sm">Include the article URL, the section to review, and a reference source when possible.</p></div></section><section><h2>Content feedback</h2><p className="mt-3">Accuracy reports receive priority. We may update an article and record a new review date after verification.</p></section></InfoPage>}

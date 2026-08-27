@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { localeFromPath } from "@/lib/i18n";
 
 const messages = [
   "Chào bạn! Mình là Nexi ✨",
@@ -13,6 +15,7 @@ const INTRO_SEEN_KEY = "ainext-nexi-intro-seen";
 const HIDE_DURATION_MS = 90 * 24 * 60 * 60 * 1_000;
 
 export function AiPet() {
+  const english=localeFromPath(usePathname())==="en";
   const rootRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<number | null>(null);
   const hideRef = useRef<number | null>(null);
@@ -77,7 +80,7 @@ export function AiPet() {
     setHidden(true);
   }
 
-  if (!ready || hidden) return null;
+  if (english || !ready || hidden) return null;
   return <div ref={rootRef} className={`ai-pet ${open ? "is-open" : ""} ${reacting ? "is-reacting" : ""}`}>
     <div className="ai-pet-bubble" role="status" aria-live="polite"><span className="ai-pet-message">{messages[messageIndex]}</span><button type="button" className="ai-pet-dismiss" onClick={dismiss} aria-label="Ẩn Nexi trong 90 ngày"><X size={13}/></button><span aria-hidden="true"/></div>
     <button type="button" className="ai-pet-button" onClick={react} onPointerEnter={() => setOpen(true)} onPointerLeave={() => !reacting && setOpen(false)} aria-label="Chào Nexi, linh vật AINextGen">

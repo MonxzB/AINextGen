@@ -8,7 +8,7 @@ import { TutorialCard } from "@/components/tutorial-card";
 import { getTutorialSummaries as getTutorials } from "@/lib/tutorial-data";
 import { getTutorialViewCounts } from "@/lib/view-counts";
 import { absoluteUrl, siteConfig } from "@/lib/site";
-export const metadata:Metadata={alternates:{canonical:absoluteUrl("/")},openGraph:{url:absoluteUrl("/"),title:siteConfig.seoTitle,description:siteConfig.description}};
+export const metadata:Metadata={alternates:{canonical:absoluteUrl("/"),languages:{"vi-VN":"/",en:"/en","x-default":"/"}},openGraph:{url:absoluteUrl("/"),title:siteConfig.seoTitle,description:siteConfig.description}};
 export const revalidate=300;
 const topics=[[BrainCircuit,"AI nền tảng","Hiểu LLM, RAG và cách AI hoạt động","AI Fundamentals"],[Bot,"Prompting","Viết prompt rõ, chính xác và tái sử dụng","Prompting"],[Workflow,"Automation","Kết nối AI vào quy trình công việc","Automation"],[Sparkles,"Creative AI","Tạo nội dung, hình ảnh và video","Creative AI"]] as const;
 const roadmap=[["01","Hiểu","Nắm cách AI hoạt động, điểm mạnh và giới hạn."],["02","Thực hành","Dùng prompt và công cụ AI cho việc thật mỗi ngày."],["03","Tự động hóa","Ghép công cụ thành workflow có kiểm soát."]];
