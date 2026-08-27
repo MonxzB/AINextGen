@@ -87,7 +87,7 @@ export function TutorialEditor({ tutorial, defaultCategory }: { tutorial?: Admin
         <div><input type="hidden" name="content" value={content}/><ContentBlockEditor initialBlocks={tutorial?.content_blocks} legacyContent={tutorial?.content??""} onChange={(_,text)=>setContent(text)}/><FieldError errors={state.fieldErrors?.content}/><FieldError errors={state.fieldErrors?.content_blocks}/></div>
         <section className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-5">
           <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-black uppercase tracking-[.16em] text-cyan-500">English version</p><h2 className="mt-1 text-xl font-black">Bản dịch tiếng Anh</h2></div><span className="rounded-full bg-white/5 px-3 py-1 text-xs text-black/45">URL: /en/tutorials/{slug||"slug"}</span></div>
-          <p className="mt-2 text-sm leading-6 text-black/50">Chỉ bật xuất bản EN sau khi đã dịch đủ tiêu đề, mô tả và nội dung. Có thể dùng Markdown cho phần nội dung.</p>
+          <p className="mt-2 text-sm leading-6 text-black/50">Khi lưu bài, Google Translation tự tạo lại bản EN nếu nội dung tiếng Việt thay đổi. Code, URL và cấu trúc block được giữ nguyên; bạn vẫn có thể chỉnh bản dịch thủ công sau đó.</p>
           <div className="mt-5 grid gap-4">
             <label className="text-sm font-bold">English title<input className="input mt-2" name="title_en" defaultValue={tutorial?.title_en??""} maxLength={120} placeholder="Practical AI tutorial title"/></label>
             <FieldError errors={state.fieldErrors?.title_en}/>
@@ -111,7 +111,7 @@ export function TutorialEditor({ tutorial, defaultCategory }: { tutorial?: Admin
               <p className="text-xs text-black/45">JPG, PNG, WebP hoặc GIF · tối đa 8 MB.</p>
             </div>
           </div>
-          <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3 text-sm font-semibold"><input type="checkbox" name="is_english_published" defaultChecked={tutorial?.is_english_published} className="mt-0.5 size-4 accent-brand-600" /><span>Xuất bản bản tiếng Anh<span className="mt-1 block text-xs font-normal text-black/45">Bài sẽ xuất hiện tại /en và được thêm vào sitemap tiếng Anh.</span></span></label>
+          <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3 text-sm font-semibold"><input type="checkbox" name="is_english_published" defaultChecked={tutorial?.is_english_published} className="mt-0.5 size-4 accent-brand-600" /><span>Tự xuất bản bản tiếng Anh<span className="mt-1 block text-xs font-normal text-black/45">Khi Google API đã cấu hình, bài EN hoàn chỉnh sẽ tự xuất bản cùng bài VN và được thêm vào sitemap.</span></span></label>
           <input ref={coverInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" onChange={(event) => uploadCover(event.target.files?.[0])} />
           <FieldError errors={state.fieldErrors?.cover_url} />
         </div>
