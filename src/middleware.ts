@@ -20,6 +20,10 @@ function publicLocale(request:NextRequest):{locale:Locale;redirect?:NextResponse
   const ignored=path.startsWith("/admin")||path.startsWith("/preview")||path.startsWith("/login")||path.startsWith("/api")||path.startsWith("/go/")||path.startsWith("/_next")||PUBLIC_FILE.test(path);
   if(ignored||BOT_USER_AGENT.test(request.headers.get("user-agent")||""))return {locale:isEnglish?"en":"vi"};
   if(isEnglish)return {locale:"en"};
+  // A non-prefixed content URL is an explicit Vietnamese choice. Only the
+  // neutral homepage may use geo/cookie detection; otherwise an old EN cookie
+  // could hijack links such as /tutorials/[slug] while browsing the VN site.
+  if(path!=="/")return {locale:"vi"};
   const country=request.headers.get("x-vercel-ip-country")?.toUpperCase();
   const locale:Locale=explicit??(country&&country!=="VN"?"en":"vi");
   if(locale==="en"){
