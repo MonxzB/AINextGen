@@ -44,6 +44,20 @@ function sourceChanged(previous:TranslationRow|null,next:ArticleTranslationSourc
   return JSON.stringify(translationSource(previous))!==JSON.stringify(next);
 }
 
+function validatePublishedArticle(input:z.infer<typeof schema>,contentBlocks:ContentBlock[],sources:{label:string;url:string}[]){
+  const errors:Record<string,string[]>={};
+  const textLength=contentBlocks.reduce((total,block)=>total+(block.text?.trim().length??0),0);
+  if(!input.cover_url)errors.cover_url=["Bài công khai cần ảnh bìa riêng."];
+  if(textLength<800)errors.content=["Bài công khai cần ít nhất 800 ký tự nội dung hữu ích."];
+  if((input.author_bio?.trim().length??0)<40)errors.author_bio=["Giới thiệu trách nhiệm hoặc kinh nghiệm biên tập cần ít nhất 40 ký tự."];
+  if(!input.reviewed_at)errors.reviewed_at=["Hãy chọn ngày biên tập gần nhất."];
+  if(sources.length<2)errors.source_references=["Bài công khai cần ít nhất 2 nguồn tham khảo đáng tin cậy."];
+  if((input.seo_title?.trim().length??0)<20)errors.seo_title=["SEO title cần ít nhất 20 ký tự trước khi xuất bản."];
+  if((input.seo_description?.trim().length??0)<70)errors.seo_description=["Meta description cần ít nhất 70 ký tự trước khi xuất bản."];
+  if(/triệu view|bật kiếm tiền|kiếm tiền|\bviral\b/i.test(`${input.title} ${input.seo_title??""}`))errors.title=["Không dùng lời hứa về lượt xem hoặc thu nhập trong tiêu đề công khai."];
+  return errors;
+}
+
 function revalidateTutorials(slug?:string){
   revalidateTag("tutorials");
   for(const path of ["/","/tutorials","/en","/en/tutorials","/admin","/admin/tutorials"])revalidatePath(path);
@@ -67,6 +81,10 @@ export async function saveTutorial(_state:TutorialActionState,formData:FormData)
   const input=parsed.data;
   const requestedStatus=formData.get("publication_intent")??formData.get("intent");
   const status=requestedStatus==="published"?"published":"draft";
+  if(status==="published"){
+    const publicationErrors=validatePublishedArticle(parsed.data,contentBlocks,sourceResult.sources);
+    if(Object.keys(publicationErrors).length)return {error:"Bài chưa đạt checklist chất lượng để công khai.",fieldErrors:publicationErrors};
+  }
   const previousResult=input.id?await db.from("articles").select(translationFields).eq("id",input.id).single():null;
   const previous=(previousResult?.data??null) as unknown as TranslationRow|null;
   let publishedAt=previous?.published_at??null;
@@ -97,10 +115,11 @@ export async function saveTutorial(_state:TutorialActionState,formData:FormData)
     }
   }
   const translationComplete=hasCompleteEnglishTranslation(english);
-  const englishPublished=isGoogleTranslationConfigured()
-    ? status==="published"&&translationComplete&&translationResult!=="failed"
-    : formData.get("is_english_published")==="on";
-  if(!isGoogleTranslationConfigured()&&englishPublished&&!translationComplete)return {error:"Bản tiếng Anh chưa đủ nội dung để xuất bản.",fieldErrors:{title_en:["Cần tiêu đề, mô tả và nội dung tiếng Anh đầy đủ."]}};
+  const requestedEnglishPublication=formData.get("is_english_published")==="on";
+  // A freshly generated translation must be reviewed in a later save before it
+  // can enter public routes or the sitemap.
+  const englishPublished=status==="published"&&requestedEnglishPublication&&translationComplete&&translationResult==="unchanged";
+  if(requestedEnglishPublication&&!translationComplete)return {error:"Bản tiếng Anh chưa đủ nội dung để xuất bản.",fieldErrors:{title_en:["Cần tiêu đề, mô tả và nội dung tiếng Anh đầy đủ."]}};
 
   const values={author_id:user.id,title:input.title,slug:input.slug||slugify(input.title),excerpt:input.excerpt,content:input.content,content_blocks:contentBlocks,cover_url:input.cover_url||null,category:input.category,difficulty:input.difficulty,duration_minutes:input.duration_minutes,tools:input.tools?.split(",").map((item)=>item.trim()).filter(Boolean)||[],is_featured:formData.get("is_featured")==="on",status,article_type:"blog",published_at:status==="published"?publishedAt:null,seo_title:input.seo_title||null,seo_description:input.seo_description||null,author_name:input.author_name,author_bio:input.author_bio||null,source_references:sourceResult.sources,reviewed_at:input.reviewed_at?new Date(input.reviewed_at+"T12:00:00").toISOString():null,...english,is_english_published:englishPublished,updated_at:new Date().toISOString()};
   const result=input.id?await db.from("articles").update(values).eq("id",input.id).select("id,status").single():await db.from("articles").insert(values).select("id,status").single();
@@ -121,7 +140,7 @@ export async function translatePendingTutorials(_state:TranslationActionState,_f
   void _state;void _formData;
   if(!isGoogleTranslationConfigured())return {error:"Vercel chưa có GOOGLE_TRANSLATE_API_KEY."};
   const {db}=await requireUser();
-  const {data,error}=await db.from("articles").select(translationFields).eq("status","published").eq("is_english_published",false).order("updated_at",{ascending:false}).limit(3);
+  const {data,error}=await db.from("articles").select(translationFields).eq("status","published").or("title_en.is.null,excerpt_en.is.null,content_en.is.null").order("updated_at",{ascending:false}).limit(3);
   if(error)return {error:/title_en|content_blocks_en|is_english_published/i.test(error.message)?"Hãy chạy migration 020_bilingual_articles.sql trước.":error.message};
   let translated=0;
   let firstError="";
@@ -130,7 +149,7 @@ export async function translatePendingTutorials(_state:TranslationActionState,_f
     try{
       await assertTranslationBudget(db,estimateArticleTranslationCharacters(translationSource(row)));
       const automatic=await translateArticleToEnglish(translationSource(row));
-      const translatedValues={title_en:automatic.title_en,excerpt_en:automatic.excerpt_en,content_en:automatic.content_en,content_blocks_en:automatic.content_blocks_en,seo_title_en:automatic.seo_title_en,seo_description_en:automatic.seo_description_en,author_bio_en:automatic.author_bio_en,is_english_published:true,updated_at:new Date().toISOString()};
+      const translatedValues={title_en:automatic.title_en,excerpt_en:automatic.excerpt_en,content_en:automatic.content_en,content_blocks_en:automatic.content_blocks_en,seo_title_en:automatic.seo_title_en,seo_description_en:automatic.seo_description_en,author_bio_en:automatic.author_bio_en,is_english_published:false,updated_at:new Date().toISOString()};
       const {error:updateError}=await db.from("articles").update(translatedValues).eq("id",row.id);
       if(updateError)throw new Error(updateError.message);
       await recordTranslationUsage(db,row.id,automatic.characterCount);
@@ -140,9 +159,9 @@ export async function translatePendingTutorials(_state:TranslationActionState,_f
       firstError||=itemError instanceof Error?itemError.message:"Không thể dịch bài viết.";
     }
   }
-  const {count}=await db.from("articles").select("id",{count:"exact",head:true}).eq("status","published").eq("is_english_published",false);
+  const {count}=await db.from("articles").select("id",{count:"exact",head:true}).eq("status","published").or("title_en.is.null,excerpt_en.is.null,content_en.is.null");
   revalidatePath("/admin/tutorials");
-  return firstError&&translated===0?{error:firstError,remaining:count??0}:{success:translated?"Đã dịch tự động "+translated+" bài.":"Không còn bài đã đăng nào cần dịch.",translated,remaining:count??0,error:firstError||undefined};
+  return firstError&&translated===0?{error:firstError,remaining:count??0}:{success:translated?"Đã tạo bản dịch chờ kiểm duyệt cho "+translated+" bài.":"Không còn bài đã đăng nào cần dịch.",translated,remaining:count??0,error:firstError||undefined};
 }
 
 export async function deleteTutorial(id:string){const {db}=await requireUser();const {error}=await db.from("articles").delete().eq("id",id);if(error)throw new Error(error.message);revalidateTutorials();}

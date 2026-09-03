@@ -5,7 +5,7 @@ import { LOCALE_COOKIE, localizePath, type Locale } from "@/lib/i18n";
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
 const PUBLIC_FILE=/\.[a-z0-9]+$/i;
-const BOT_USER_AGENT=/(bot|crawler|spider|slurp|bingpreview|facebookexternalhit|linkedinbot|twitterbot)/i;
+const BOT_USER_AGENT=/(bot|crawler|spider|slurp|bingpreview|facebookexternalhit|linkedinbot|twitterbot|mediapartners-google|adsbot-google|googleother)/i;
 
 function rememberLocale(response:NextResponse,locale:Locale){
   response.cookies.set(LOCALE_COOKIE,locale,{path:"/",maxAge:60*60*24*365,sameSite:"lax",secure:process.env.NODE_ENV==="production"});

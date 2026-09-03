@@ -25,7 +25,7 @@ export async function GET(request:Request){
   if(!secret||request.headers.get("authorization")!=="Bearer "+secret)return NextResponse.json({error:"Unauthorized"},{status:401});
   if(!isGoogleTranslationConfigured())return NextResponse.json({error:"Google Translation is not configured"},{status:503});
   const db=getAdminClient();
-  const {data,error}=await db.from("articles").select(fields).eq("status","published").eq("is_english_published",false).order("updated_at",{ascending:false}).limit(3);
+  const {data,error}=await db.from("articles").select(fields).eq("status","published").or("title_en.is.null,excerpt_en.is.null,content_en.is.null").order("updated_at",{ascending:false}).limit(3);
   if(error)return NextResponse.json({error:error.message},{status:500});
   let translated=0;
   const failures:string[]=[];
@@ -35,7 +35,7 @@ export async function GET(request:Request){
       const source=sourceFromRow(row);
       await assertTranslationBudget(db,estimateArticleTranslationCharacters(source));
       const automatic=await translateArticleToEnglish(source);
-      const values={title_en:automatic.title_en,excerpt_en:automatic.excerpt_en,content_en:automatic.content_en,content_blocks_en:automatic.content_blocks_en,seo_title_en:automatic.seo_title_en,seo_description_en:automatic.seo_description_en,author_bio_en:automatic.author_bio_en,is_english_published:true,updated_at:new Date().toISOString()};
+      const values={title_en:automatic.title_en,excerpt_en:automatic.excerpt_en,content_en:automatic.content_en,content_blocks_en:automatic.content_blocks_en,seo_title_en:automatic.seo_title_en,seo_description_en:automatic.seo_description_en,author_bio_en:automatic.author_bio_en,is_english_published:false,updated_at:new Date().toISOString()};
       const {error:updateError}=await db.from("articles").update(values).eq("id",row.id);
       if(updateError)throw new Error(updateError.message);
       await recordTranslationUsage(db,row.id,automatic.characterCount);

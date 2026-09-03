@@ -87,7 +87,7 @@ export function TutorialEditor({ tutorial, defaultCategory }: { tutorial?: Admin
         <div><input type="hidden" name="content" value={content}/><ContentBlockEditor initialBlocks={tutorial?.content_blocks} legacyContent={tutorial?.content??""} onChange={(_,text)=>setContent(text)}/><FieldError errors={state.fieldErrors?.content}/><FieldError errors={state.fieldErrors?.content_blocks}/></div>
         <section className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-5">
           <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-black uppercase tracking-[.16em] text-cyan-500">English version</p><h2 className="mt-1 text-xl font-black">Bản dịch tiếng Anh</h2></div><span className="rounded-full bg-white/5 px-3 py-1 text-xs text-black/45">URL: /en/tutorials/{slug||"slug"}</span></div>
-          <p className="mt-2 text-sm leading-6 text-black/50">Khi lưu bài, Google Translation tự tạo lại bản EN nếu nội dung tiếng Việt thay đổi. Code, URL và cấu trúc block được giữ nguyên; bạn vẫn có thể chỉnh bản dịch thủ công sau đó.</p>
+          <p className="mt-2 text-sm leading-6 text-black/50">Khi lưu bài, Google Translation tự tạo lại bản EN nếu nội dung tiếng Việt thay đổi. Bản dịch mới luôn ở trạng thái chờ để bạn đọc, sửa và duyệt trước khi công khai.</p>
           <div className="mt-5 grid gap-4">
             <label className="text-sm font-bold">English title<input className="input mt-2" name="title_en" defaultValue={tutorial?.title_en??""} maxLength={120} placeholder="Practical AI tutorial title"/></label>
             <FieldError errors={state.fieldErrors?.title_en}/>
@@ -111,7 +111,7 @@ export function TutorialEditor({ tutorial, defaultCategory }: { tutorial?: Admin
               <p className="text-xs text-black/45">JPG, PNG, WebP hoặc GIF · tối đa 8 MB.</p>
             </div>
           </div>
-          <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3 text-sm font-semibold"><input type="checkbox" name="is_english_published" defaultChecked={tutorial?.is_english_published} className="mt-0.5 size-4 accent-brand-600" /><span>Tự xuất bản bản tiếng Anh<span className="mt-1 block text-xs font-normal text-black/45">Khi Google API đã cấu hình, bài EN hoàn chỉnh sẽ tự xuất bản cùng bài VN và được thêm vào sitemap.</span></span></label>
+          <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3 text-sm font-semibold"><input type="checkbox" name="is_english_published" defaultChecked={tutorial?.is_english_published} className="mt-0.5 size-4 accent-brand-600" /><span>Đã kiểm duyệt và xuất bản bản tiếng Anh<span className="mt-1 block text-xs font-normal text-black/45">Chỉ bật sau khi đã đọc và sửa toàn bộ title, excerpt, nội dung, metadata. Nếu bản VN thay đổi, bản EN sẽ tự quay về trạng thái chờ.</span></span></label>
           <input ref={coverInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" onChange={(event) => uploadCover(event.target.files?.[0])} />
           <FieldError errors={state.fieldErrors?.cover_url} />
         </div>
@@ -135,10 +135,10 @@ export function TutorialEditor({ tutorial, defaultCategory }: { tutorial?: Admin
         </section>
 
         <section className="card p-5">
-          <h2 className="font-black">Tác giả & kiểm chứng</h2><p className="mt-1 text-xs leading-5 text-black/45">Thông tin này giúp người đọc và Google đánh giá độ tin cậy của bài viết.</p>
+          <h2 className="font-black">Tác giả & biên tập</h2><p className="mt-1 text-xs leading-5 text-black/45">Thông tin này giúp người đọc hiểu ai chịu trách nhiệm và bài dựa trên nguồn nào.</p>
           <label className="mt-4 block text-sm font-bold">Tên tác giả<input className="input mt-2" name="author_name" defaultValue={tutorial?.author_name ?? "Đội ngũ AINextGen"} maxLength={100} required/></label><FieldError errors={state.fieldErrors?.author_name}/>
           <label className="mt-4 block text-sm font-bold">Giới thiệu tác giả<textarea className="input mt-2" name="author_bio" defaultValue={tutorial?.author_bio ?? ""} rows={3} maxLength={300} placeholder="Kinh nghiệm hoặc trách nhiệm biên tập nội dung..."/></label><FieldError errors={state.fieldErrors?.author_bio}/>
-          <label className="mt-4 block text-sm font-bold">Ngày kiểm chứng gần nhất<input className="input mt-2" type="date" name="reviewed_at" defaultValue={reviewedDate}/></label>
+          <label className="mt-4 block text-sm font-bold">Ngày biên tập gần nhất<input className="input mt-2" type="date" name="reviewed_at" defaultValue={reviewedDate}/></label><FieldError errors={state.fieldErrors?.reviewed_at}/>
           <label className="mt-4 block text-sm font-bold">Nguồn tham khảo<textarea className="input mt-2 font-mono text-xs leading-5" name="source_references" defaultValue={sourceText} rows={5} placeholder={"OpenAI Docs | https://platform.openai.com/docs\nAnthropic Docs | https://docs.anthropic.com"}/><span className="mt-1 block text-xs font-normal text-black/40">Mỗi dòng: Tên nguồn | URL</span></label><FieldError errors={state.fieldErrors?.source_references}/>
         </section>
 
@@ -149,8 +149,8 @@ export function TutorialEditor({ tutorial, defaultCategory }: { tutorial?: Admin
             <p className="mt-1 line-clamp-2 text-base font-semibold text-brand-700">{previewTitle}</p>
             <p className="mt-1 line-clamp-3 text-xs leading-5 text-black/50">{previewDescription}</p>
           </div>
-          <label className="mt-4 block text-sm font-bold">SEO title <span className={`float-right text-xs ${seoTitle.length > 60 ? "text-red-600" : "text-black/40"}`}>{seoTitle.length}/60</span><input className="input mt-2" name="seo_title" value={seoTitle} onChange={(event) => setSeoTitle(event.target.value)} maxLength={70} placeholder="Để trống sẽ dùng tiêu đề bài" /></label>
-          <label className="mt-4 block text-sm font-bold">Meta description <span className={`float-right text-xs ${seoDescription.length > 160 ? "text-red-600" : "text-black/40"}`}>{seoDescription.length}/160</span><textarea className="input mt-2" name="seo_description" value={seoDescription} onChange={(event) => setSeoDescription(event.target.value)} rows={3} maxLength={180} placeholder="Mô tả hấp dẫn để tăng tỷ lệ nhấp" /></label>
+          <label className="mt-4 block text-sm font-bold">SEO title <span className={`float-right text-xs ${seoTitle.length > 60 ? "text-red-600" : "text-black/40"}`}>{seoTitle.length}/60</span><input className="input mt-2" name="seo_title" value={seoTitle} onChange={(event) => setSeoTitle(event.target.value)} maxLength={70} placeholder="Tiêu đề rõ ràng, không hứa hẹn lượt xem hoặc thu nhập" /></label><FieldError errors={state.fieldErrors?.seo_title}/>
+          <label className="mt-4 block text-sm font-bold">Meta description <span className={`float-right text-xs ${seoDescription.length > 160 ? "text-red-600" : "text-black/40"}`}>{seoDescription.length}/160</span><textarea className="input mt-2" name="seo_description" value={seoDescription} onChange={(event) => setSeoDescription(event.target.value)} rows={3} maxLength={180} placeholder="Mô tả cụ thể người đọc sẽ học được gì" /></label><FieldError errors={state.fieldErrors?.seo_description}/>
         </section>
 
         <div className="flex flex-wrap gap-3 px-1">
