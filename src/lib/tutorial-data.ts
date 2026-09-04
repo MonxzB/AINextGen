@@ -23,30 +23,31 @@ const summaryFields="id,title,slug,excerpt,cover_url,difficulty,duration_minutes
 const legacyPublicFields="id,title,slug,excerpt,content,content_blocks,cover_url,difficulty,duration_minutes,category,tools,is_featured,seo_title,seo_description,published_at,updated_at";
 const englishFields=`${publicFields},title_en,excerpt_en,content_en,content_blocks_en,seo_title_en,seo_description_en,author_bio_en,is_english_published`;
 const englishSummaryFields=`${summaryFields},title_en,excerpt_en,seo_title_en,seo_description_en,is_english_published`;
+const originalContentFilter="import_mode.is.null,import_mode.neq.full";
 
 const demoSummaries=()=>demoTutorials.map((tutorial)=>enrichTutorial({id:tutorial.id,title:tutorial.title,slug:tutorial.slug,excerpt:tutorial.excerpt,cover_url:tutorial.cover_url,difficulty:tutorial.difficulty,duration_minutes:tutorial.duration_minutes,category:tutorial.category,tools:tutorial.tools,is_featured:tutorial.is_featured,published_at:tutorial.published_at,updated_at:tutorial.updated_at}));
 
 async function fetchTutorials(){
   const db=getPublicClient();
-  const result=await db.from("articles").select(publicFields).eq("status","published").order("published_at",{ascending:false});
+  const result=await db.from("articles").select(publicFields).eq("status","published").or(originalContentFilter).order("published_at",{ascending:false});
   if(!result.error)return ((result.data as unknown as Tutorial[])||[]).map(enrichTutorial);
-  const fallback=await db.from("articles").select(legacyPublicFields).eq("status","published").order("published_at",{ascending:false});
+  const fallback=await db.from("articles").select(legacyPublicFields).eq("status","published").or(originalContentFilter).order("published_at",{ascending:false});
   return ((fallback.data as unknown as Tutorial[])||[]).map(enrichTutorial);
 }
 const cachedTutorials=unstable_cache(fetchTutorials,["ainextgen-public-tutorials-v4"],{revalidate:300,tags:["tutorials"]});
 
 async function fetchTutorialSummaries(){
-  const {data}=await getPublicClient().from("articles").select(summaryFields).eq("status","published").order("published_at",{ascending:false});
+  const {data}=await getPublicClient().from("articles").select(summaryFields).eq("status","published").or(originalContentFilter).order("published_at",{ascending:false});
   return ((data as TutorialSummary[])||[]).map(enrichTutorial);
 }
 const cachedSummaries=unstable_cache(fetchTutorialSummaries,["ainextgen-public-tutorial-summaries-v4"],{revalidate:300,tags:["tutorials"]});
 
 async function fetchTutorial(slug:string){
   const db=getPublicClient();
-  const result=await db.from("articles").select(publicFields).eq("slug",slug).eq("status","published").single();
+  const result=await db.from("articles").select(publicFields).eq("slug",slug).eq("status","published").or(originalContentFilter).single();
   const tutorial=result.data as unknown as Tutorial|null;
   if(!result.error)return tutorial ? enrichTutorial(tutorial) : null;
-  const fallback=await db.from("articles").select(legacyPublicFields).eq("slug",slug).eq("status","published").single();
+  const fallback=await db.from("articles").select(legacyPublicFields).eq("slug",slug).eq("status","published").or(originalContentFilter).single();
   const legacyTutorial=fallback.data as unknown as Tutorial|null;
   return legacyTutorial ? enrichTutorial(legacyTutorial) : null;
 }
@@ -65,21 +66,21 @@ function toEnglishTutorial(row:Tutorial):Tutorial{
 }
 
 async function fetchEnglishTutorials(){
-  const result=await getPublicClient().from("articles").select(englishFields).eq("status","published").eq("is_english_published",true).order("published_at",{ascending:false});
+  const result=await getPublicClient().from("articles").select(englishFields).eq("status","published").eq("is_english_published",true).or(originalContentFilter).order("published_at",{ascending:false});
   if(result.error)return [];
   return ((result.data as unknown as Tutorial[])||[]).map(toEnglishTutorial).filter((tutorial)=>tutorial.has_english_translation);
 }
 const cachedEnglishTutorials=unstable_cache(fetchEnglishTutorials,["ainextgen-public-tutorials-en-v1"],{revalidate:300,tags:["tutorials"]});
 
 async function fetchEnglishTutorialSummaries(){
-  const result=await getPublicClient().from("articles").select(englishSummaryFields).eq("status","published").eq("is_english_published",true).order("published_at",{ascending:false});
+  const result=await getPublicClient().from("articles").select(englishSummaryFields).eq("status","published").eq("is_english_published",true).or(originalContentFilter).order("published_at",{ascending:false});
   if(result.error)return [];
   return ((result.data as unknown as Tutorial[])||[]).filter(row=>Boolean(row.title_en&&row.excerpt_en)).map(row=>enrichTutorial({...row,title:row.title_en!,excerpt:row.excerpt_en!,seo_title:row.seo_title_en||row.title_en,seo_description:row.seo_description_en||row.excerpt_en,has_english_translation:true}) as TutorialSummary);
 }
 const cachedEnglishSummaries=unstable_cache(fetchEnglishTutorialSummaries,["ainextgen-public-tutorial-summaries-en-v1"],{revalidate:300,tags:["tutorials"]});
 
 async function fetchEnglishTutorial(slug:string){
-  const result=await getPublicClient().from("articles").select(englishFields).eq("slug",slug).eq("status","published").eq("is_english_published",true).single();
+  const result=await getPublicClient().from("articles").select(englishFields).eq("slug",slug).eq("status","published").eq("is_english_published",true).or(originalContentFilter).single();
   const data=result.data as unknown as Tutorial|null;
   if(result.error||!data)return null;
   const tutorial=toEnglishTutorial(data);
