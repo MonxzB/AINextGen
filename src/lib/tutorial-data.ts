@@ -34,13 +34,13 @@ async function fetchTutorials(){
   const fallback=await db.from("articles").select(legacyPublicFields).eq("status","published").or(originalContentFilter).order("published_at",{ascending:false});
   return ((fallback.data as unknown as Tutorial[])||[]).map(enrichTutorial);
 }
-const cachedTutorials=unstable_cache(fetchTutorials,["ainextgen-public-tutorials-v4"],{revalidate:300,tags:["tutorials"]});
+const cachedTutorials=unstable_cache(fetchTutorials,["ainextgen-public-tutorials-v5"],{revalidate:300,tags:["tutorials"]});
 
 async function fetchTutorialSummaries(){
   const {data}=await getPublicClient().from("articles").select(summaryFields).eq("status","published").or(originalContentFilter).order("published_at",{ascending:false});
   return ((data as TutorialSummary[])||[]).map(enrichTutorial);
 }
-const cachedSummaries=unstable_cache(fetchTutorialSummaries,["ainextgen-public-tutorial-summaries-v4"],{revalidate:300,tags:["tutorials"]});
+const cachedSummaries=unstable_cache(fetchTutorialSummaries,["ainextgen-public-tutorial-summaries-v5"],{revalidate:300,tags:["tutorials"]});
 
 async function fetchTutorial(slug:string){
   const db=getPublicClient();
@@ -51,7 +51,7 @@ async function fetchTutorial(slug:string){
   const legacyTutorial=fallback.data as unknown as Tutorial|null;
   return legacyTutorial ? enrichTutorial(legacyTutorial) : null;
 }
-const cachedTutorial=unstable_cache(fetchTutorial,["ainextgen-public-tutorial-v4"],{revalidate:300,tags:["tutorials"]});
+const cachedTutorial=unstable_cache(fetchTutorial,["ainextgen-public-tutorial-v5"],{revalidate:300,tags:["tutorials"]});
 
 const loadTutorials=process.env.NODE_ENV==="development"?fetchTutorials:cachedTutorials;
 const loadTutorialSummaries=process.env.NODE_ENV==="development"?fetchTutorialSummaries:cachedSummaries;
@@ -70,14 +70,14 @@ async function fetchEnglishTutorials(){
   if(result.error)return [];
   return ((result.data as unknown as Tutorial[])||[]).map(toEnglishTutorial).filter((tutorial)=>tutorial.has_english_translation);
 }
-const cachedEnglishTutorials=unstable_cache(fetchEnglishTutorials,["ainextgen-public-tutorials-en-v1"],{revalidate:300,tags:["tutorials"]});
+const cachedEnglishTutorials=unstable_cache(fetchEnglishTutorials,["ainextgen-public-tutorials-en-v2"],{revalidate:300,tags:["tutorials"]});
 
 async function fetchEnglishTutorialSummaries(){
   const result=await getPublicClient().from("articles").select(englishSummaryFields).eq("status","published").eq("is_english_published",true).or(originalContentFilter).order("published_at",{ascending:false});
   if(result.error)return [];
   return ((result.data as unknown as Tutorial[])||[]).filter(row=>Boolean(row.title_en&&row.excerpt_en)).map(row=>enrichTutorial({...row,title:row.title_en!,excerpt:row.excerpt_en!,seo_title:row.seo_title_en||row.title_en,seo_description:row.seo_description_en||row.excerpt_en,has_english_translation:true}) as TutorialSummary);
 }
-const cachedEnglishSummaries=unstable_cache(fetchEnglishTutorialSummaries,["ainextgen-public-tutorial-summaries-en-v1"],{revalidate:300,tags:["tutorials"]});
+const cachedEnglishSummaries=unstable_cache(fetchEnglishTutorialSummaries,["ainextgen-public-tutorial-summaries-en-v2"],{revalidate:300,tags:["tutorials"]});
 
 async function fetchEnglishTutorial(slug:string){
   const result=await getPublicClient().from("articles").select(englishFields).eq("slug",slug).eq("status","published").eq("is_english_published",true).or(originalContentFilter).single();
@@ -86,7 +86,7 @@ async function fetchEnglishTutorial(slug:string){
   const tutorial=toEnglishTutorial(data);
   return tutorial.has_english_translation?tutorial:null;
 }
-const cachedEnglishTutorial=unstable_cache(fetchEnglishTutorial,["ainextgen-public-tutorial-en-v1"],{revalidate:300,tags:["tutorials"]});
+const cachedEnglishTutorial=unstable_cache(fetchEnglishTutorial,["ainextgen-public-tutorial-en-v2"],{revalidate:300,tags:["tutorials"]});
 
 export const getEnglishTutorials=cache(async():Promise<Tutorial[]>=>isSupabaseConfigured()?(process.env.NODE_ENV==="development"?fetchEnglishTutorials():cachedEnglishTutorials()):[]);
 export const getEnglishTutorialSummaries=cache(async():Promise<TutorialSummary[]>=>isSupabaseConfigured()?(process.env.NODE_ENV==="development"?fetchEnglishTutorialSummaries():cachedEnglishSummaries()):[]);
