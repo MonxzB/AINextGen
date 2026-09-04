@@ -7,6 +7,42 @@ type VerifiedMetadata = {
 };
 
 const REVIEWED_AT = "2026-08-15T05:00:00.000Z";
+const DEFAULT_AUTHOR_BIO="Đội ngũ AINextGen biên tập hướng dẫn từ tài liệu chính thức, chịu trách nhiệm về bản công khai và cập nhật khi công cụ hoặc chính sách thay đổi.";
+const FLOW={label:"Google Flow — Công cụ làm phim AI",url:"https://labs.google/fx/tools/flow"};
+const OPENAI_PROMPT={label:"OpenAI — Cách viết prompt hiệu quả",url:"https://help.openai.com/en/articles/10032626-prompt-engineering-best-practices-for-chatgpt"};
+const CLAUDE_PROMPT={label:"Anthropic — Prompting best practices",url:"https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/prompt-templates-and-variables"};
+const YOUTUBE_ORIGINAL={label:"YouTube — Nội dung nguyên bản và chính sách kiếm tiền",url:"https://support.google.com/youtube/answer/1311392"};
+const YOUTUBE_AI={label:"YouTube — Công bố nội dung tạo bằng AI",url:"https://support.google.com/youtube/answer/14328491"};
+
+function fallbackSources(tools:string[]):SourceReference[]{
+  if(tools.includes("Remotion"))return [
+    {label:"Remotion — Tài liệu chính thức",url:"https://www.remotion.dev/docs/"},
+    {label:"ElevenLabs — Tài liệu Text to Speech",url:"https://elevenlabs.io/docs/overview/capabilities/text-to-speech"},
+    YOUTUBE_AI,
+  ];
+  if(tools.includes("Higgsfield AI"))return [
+    {label:"Higgsfield — Tài liệu sản phẩm AI Video",url:"https://higgsfield.ai/ai-video"},
+    CLAUDE_PROMPT,
+    YOUTUBE_AI,
+  ];
+  if(tools.includes("Magic Hour AI"))return [
+    {label:"Magic Hour — Nền tảng tạo video AI",url:"https://magichour.ai/"},
+    YOUTUBE_ORIGINAL,
+    YOUTUBE_AI,
+  ];
+  if(tools.includes("YouTube Kids"))return [
+    YOUTUBE_ORIGINAL,
+    {label:"YouTube — Nội dung chất lượng cho trẻ em và gia đình",url:"https://support.google.com/youtube/answer/10774223"},
+    {label:"YouTube — Nội dung dành cho trẻ em",url:"https://support.google.com/youtube/answer/9684541"},
+  ];
+  if(tools.includes("Canva"))return [
+    FLOW,
+    {label:"Canva — Thỏa thuận cấp phép nội dung",url:"https://www.canva.com/policies/content-license-agreement/"},
+    YOUTUBE_ORIGINAL,
+  ];
+  if(tools.includes("Claude AI"))return [CLAUDE_PROMPT,FLOW,YOUTUBE_AI];
+  return [OPENAI_PROMPT,FLOW,YOUTUBE_ORIGINAL];
+}
 
 function neutralizeHeadline(value:string|null|undefined){
   if(!value)return value;
@@ -83,12 +119,18 @@ export const verifiedTutorialMetadata: Record<string, VerifiedMetadata> = {
 
 export function enrichTutorial<T extends Tutorial | TutorialSummary>(tutorial: T): T {
   const metadata = verifiedTutorialMetadata[tutorial.slug];
+  const sourceReferences=(tutorial.source_references?.length??0)>=2?tutorial.source_references:fallbackSources(tutorial.tools);
+  const coverUrl=tutorial.cover_url?.replace("https://ainextgen.vn/","https://ainextgen.io.vn/")
+    ||(tutorial.slug==="tao-video-tu-dong-bang-code-remotion-ai-voice"?"/images/tutorials/tao-video-tu-dong-bang-code-remotion-ai-voice.webp":null);
   const normalized={
     ...tutorial,
     title:neutralizeHeadline(tutorial.title)??tutorial.title,
     excerpt:neutralizeDescription(tutorial.excerpt)??tutorial.excerpt,
     seo_title:neutralizeHeadline(tutorial.seo_title),
     seo_description:neutralizeDescription(tutorial.seo_description),
+    cover_url:coverUrl,
+    author_bio:tutorial.author_bio||DEFAULT_AUTHOR_BIO,
+    source_references:sourceReferences,
   } as T;
   if (!metadata) return normalized;
   return { ...normalized, ...metadata, reviewed_at: REVIEWED_AT, updated_at: REVIEWED_AT };
