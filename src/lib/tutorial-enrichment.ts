@@ -8,6 +8,27 @@ type VerifiedMetadata = {
 
 const REVIEWED_AT = "2026-08-15T05:00:00.000Z";
 
+function neutralizeHeadline(value:string|null|undefined){
+  if(!value)return value;
+  return value
+    .replace(/\s+triệu view(?:\s+và bật kiếm tiền YouTube)?/gi,"")
+    .replace(/\s+million[- ]view/gi,"")
+    .replace(/\s+viral/gi,"")
+    .replace(/\s{2,}/g," ")
+    .trim();
+}
+
+function neutralizeDescription(value:string|null|undefined){
+  if(!value)return value;
+  return value
+    .replace(/triệu view/gi,"thu hút người xem")
+    .replace(/million[- ]view/gi,"audience-focused")
+    .replace(/bật kiếm tiền YouTube/gi,"đáp ứng yêu cầu xuất bản trên YouTube")
+    .replace(/\bviral\b/gi,"dễ chia sẻ")
+    .replace(/\s{2,}/g," ")
+    .trim();
+}
+
 export const verifiedTutorialMetadata: Record<string, VerifiedMetadata> = {
   "nghien-cuu-voi-ai-khong-hallucination": { cover_url: "/images/tutorials/nghien-cuu-voi-ai-khong-hallucination.webp", source_references: [
     { label: "NIST — Generative AI Profile", url: "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf" },
@@ -62,6 +83,13 @@ export const verifiedTutorialMetadata: Record<string, VerifiedMetadata> = {
 
 export function enrichTutorial<T extends Tutorial | TutorialSummary>(tutorial: T): T {
   const metadata = verifiedTutorialMetadata[tutorial.slug];
-  if (!metadata) return tutorial;
-  return { ...tutorial, ...metadata, reviewed_at: REVIEWED_AT, updated_at: REVIEWED_AT };
+  const normalized={
+    ...tutorial,
+    title:neutralizeHeadline(tutorial.title)??tutorial.title,
+    excerpt:neutralizeDescription(tutorial.excerpt)??tutorial.excerpt,
+    seo_title:neutralizeHeadline(tutorial.seo_title),
+    seo_description:neutralizeDescription(tutorial.seo_description),
+  } as T;
+  if (!metadata) return normalized;
+  return { ...normalized, ...metadata, reviewed_at: REVIEWED_AT, updated_at: REVIEWED_AT };
 }
